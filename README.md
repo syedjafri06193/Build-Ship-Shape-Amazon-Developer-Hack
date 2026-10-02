@@ -1,7 +1,4 @@
-# Build-Ship-Shape-Amazon-Developer-Hack
-
-
-# Build, Ship, Shape: Amazon Developer Hackathon — Resources
+# Build, Ship, Shape: Amazon Developer Hackathon
 
 > Build across Amazon Devices and shape what's next.
 
