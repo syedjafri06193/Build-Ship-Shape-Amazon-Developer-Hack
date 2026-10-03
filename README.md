@@ -1,4 +1,5 @@
 # Build, Ship, Shape: Amazon Developer Hackathon
+Contributors: Syed Jafri.
 
 > Build across Amazon Devices and shape what's next.
 
