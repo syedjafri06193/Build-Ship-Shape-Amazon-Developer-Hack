@@ -148,3 +148,9 @@ A core goal of the hackathon is improving the developer experience. Product feed
 ---
 
 *Source: https://amazonappdev2026.devpost.com/resources (retrieved Oct 2, 2026)*
+
+---
+
+## 🍳 Our submission: Pantry Chef (Alexa+ track)
+
+The project is in [`Submission/`](Submission/). Setup and run instructions are in [`Submission/README.md`](Submission/README.md).
