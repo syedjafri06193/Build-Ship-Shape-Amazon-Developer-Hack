@@ -1,0 +1,26 @@
+{
+  "name": "pantry-chef",
+  "version": "1.0.0",
+  "description": "Pantry Chef: an Alexa+ MCP server for cooking with what you have",
+  "main": "dist/server.js",
+  "scripts": {
+    "test": "tsx test/smoke.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "express": "^5.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "type": "module"
+}

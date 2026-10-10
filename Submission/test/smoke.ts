@@ -1,0 +1,20 @@
+// End-to-end smoke test: real MCP client over Streamable HTTP against a running server.
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+const url = new URL(process.env.MCP_URL ?? "http://localhost:3000/mcp");
+const client = new Client({ name: "smoke", version: "1.0.0" });
+await client.connect(new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-household": "smoke-" + Date.now() } } }));
+const { tools } = await client.listTools();
+console.log("tools:", tools.map(t => t.name).join(", "));
+const call = async (name: string, args = {}) => { const r: any = await client.callTool({ name, arguments: args }); console.log(`> ${name}`, JSON.stringify(args), "\n  ", r.content[0].text); if (r.isError) throw new Error(name); return r; };
+await call("whats_expiring");
+const s = await call("suggest_recipes");
+if (s.structuredContent.data[0].id !== "spinach-frittata") throw new Error("expected frittata first");
+await call("start_cooking", { recipe: "spinach frittata" });
+await call("next_step"); await call("set_timer"); await call("check_timers");
+await call("repeat_step"); await call("previous_step");
+for (let i = 0; i < 6; i++) await call("next_step");
+await call("add_pantry_item", { name: "Avocados", quantity: 2, expiresInDays: 2 });
+await call("list_pantry"); await call("cancel_timer");
+const res = await client.listResources(); console.log("resources:", res.resources.map(r => r.uri));
+await client.close(); console.log("\nSMOKE TEST PASSED");

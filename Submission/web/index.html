@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pantry Chef · Alexa+ Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14110f;--panel:#1e1a17;--line:#352e28;--ink:#f3ece4;--mute:#a89b8e;--accent:#ff9d4d;--accent2:#5cc8ff;--ok:#7bd88f;--warn:#ffcf5c;--bad:#ff7a6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif;min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid var(--line)}
+header h1{font:700 22px Fraunces,serif;margin:0;letter-spacing:-.01em}
+header .tag{color:var(--mute);font-size:13px}
+header button{margin-left:auto}
+main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;padding:20px 24px;max-width:1300px;margin:0 auto}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:16px}}
+.device{background:linear-gradient(180deg,#221d19,#1a1613);border:1px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;min-height:620px}
+.card-now{border-radius:16px;padding:22px;background:#2a221c;margin-bottom:16px;min-height:150px}
+.card-now .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.card-now h2{font:500 26px/1.25 Fraunces,serif;margin:8px 0 0}
+.progress{display:flex;gap:6px;margin-top:16px}
+.progress span{height:5px;flex:1;border-radius:3px;background:#3d342c}
+.progress span.on{background:var(--accent)}
+#chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px;max-height:360px}
+.msg{max-width:85%;padding:10px 14px;border-radius:16px;white-space:pre-wrap}
+.me{align-self:flex-end;background:#3a3029;border-bottom-right-radius:4px}
+.alexa{align-self:flex-start;background:#173041;border-bottom-left-radius:4px}
+.ring{display:flex;align-items:center;gap:10px;margin-top:14px}
+.orb{width:46px;height:46px;border-radius:50%;border:none;background:radial-gradient(circle at 35% 30%,#8fe0ff,var(--accent2) 45%,#1a6f9a);cursor:pointer;flex:none;box-shadow:0 0 0 0 rgba(92,200,255,.6)}
+.orb.listening{animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(92,200,255,.6)}100%{box-shadow:0 0 0 16px rgba(92,200,255,0)}}
+input[type=text]{flex:1;background:#120f0d;border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:12px 14px;font:inherit}
+input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{background:#2c2520;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chips button{font-size:13px;padding:5px 10px;border-radius:999px;color:var(--mute)}
+aside{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.panel h3{margin:0 0 10px;font:600 13px Inter;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.pantry li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line)}
+.pantry ul,.timers ul{list-style:none;margin:0;padding:0}
+.pill{font-size:12px;padding:1px 8px;border-radius:999px}
+.p-bad{background:rgba(255,122,107,.15);color:var(--bad)}.p-warn{background:rgba(255,207,92,.13);color:var(--warn)}.p-ok{color:var(--mute)}
+.timers li{display:flex;justify-content:space-between;font:15px JetBrains Mono,monospace;padding:4px 0}
+.log{font:12px/1.45 JetBrains Mono,monospace;max-height:260px;overflow:auto;color:var(--mute)}
+.log div{padding:6px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.log b{color:var(--accent2);font-weight:400}
+.status{font-size:12px;color:var(--mute)}
+.status.ok::before{content:"● ";color:var(--ok)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pantry Chef</h1><span class="tag">Alexa+ simulator · MCP over Streamable HTTP</span>
+  <span id="status" class="status">connecting…</span>
+  <button id="reset" title="Restore the demo pantry">Reset demo</button>
+</header>
+<main>
+  <section class="device" aria-label="Simulated Alexa+ screen device">
+    <div class="card-now" id="now">
+      <div class="eyebrow">Good to know</div>
+      <h2>Ask what's expiring, or what you can make tonight.</h2>
+    </div>
+    <div id="chat" aria-live="polite"></div>
+    <form class="ring" id="form">
+      <button type="button" class="orb" id="mic" aria-label="Hold to talk"></button>
+      <input type="text" id="input" placeholder="Try: “Alexa, what can I make for dinner?”" autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
+    <div class="chips" id="chips"></div>
+    <label class="status" style="margin-top:10px"><input type="checkbox" id="speak" checked> Speak responses</label>
+  </section>
+  <aside>
+    <div class="panel pantry"><h3>Pantry</h3><ul id="pantry"></ul></div>
+    <div class="panel timers"><h3>Timers</h3><ul id="timers"><li class="status">None running</li></ul></div>
+    <div class="panel"><h3>MCP tool calls</h3><div class="log" id="log"></div></div>
+  </aside>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const household = (() => { try { let id = localStorage.getItem("pc-household"); if (!id) { id = "hh-" + Math.random().toString(36).slice(2, 10); localStorage.setItem("pc-household", id); } return id; } catch { return "hh-" + Math.random().toString(36).slice(2, 10); } })();
+
+// ---- Minimal MCP client over Streamable HTTP (JSON-RPC 2.0) ----
+let rpcId = 0;
+async function rpc(method, params = {}) {
+  const res = await fetch("/mcp", {
+    method: "POST",
+    headers: { "content-type": "application/json", "accept": "application/json, text/event-stream", "mcp-protocol-version": "2025-11-25", "x-household": household },
+    body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
+  });
+  const body = await res.json();
+  if (body.error) throw new Error(body.error.message);
+  return body.result;
+}
+async function callTool(name, args = {}) {
+  const r = await rpc("tools/call", { name, arguments: args });
+  const entry = document.createElement("div");
+  entry.innerHTML = `<b>→ ${name}</b>(${escapeHtml(JSON.stringify(args))})<br>← ${escapeHtml(r.structuredContent?.speech ?? r.content?.[0]?.text ?? "")}`;
+  $("#log").prepend(entry);
+  return r.structuredContent ?? { speech: r.content?.[0]?.text };
+}
+const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---- Intent router: maps an utterance to MCP tool calls (the "Alexa+" brain for this demo) ----
+const words = { one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,fifteen:15,twenty:20,thirty:30 };
+const num = s => { const m = s.match(/\d+(\.\d+)?/); if (m) return Number(m[0]); for (const [w, n] of Object.entries(words)) if (new RegExp(`\\b${w}\\b`).test(s)) return n; };
+let lastOfferedTimer = false, lastSuggestion = null;
+
+async function route(raw) {
+  const t = raw.toLowerCase().replace(/^(hey |ok )?alexa[, ]*/, "").replace(/[?.!]/g, "").trim();
+  const yes = /^(yes|yeah|yep|sure|please|ok|okay|do it|go ahead)\b/.test(t);
+  if (yes && lastOfferedTimer) return callTool("set_timer");
+  if (yes && lastSuggestion) return callTool("start_cooking", { recipe: lastSuggestion });
+  if (/\b(next|done|what'?s next|continue|ready)\b/.test(t) && !/\b(make|cook)\b/.test(t)) return callTool("next_step");
+  if (/\b(back|previous|go back)\b/.test(t)) return callTool("previous_step");
+  if (/\b(repeat|say that again|again|what was that)\b/.test(t)) return callTool("repeat_step");
+  if (/\b(cancel|stop)\b.*\btimer/.test(t)) return callTool("cancel_timer");
+  if (/\b(how (long|much time)|time left|timers?\b.*\?*$|check.*timer)/.test(t) && !/\bset\b/.test(t)) return callTool("check_timers");
+  if (/\b(set|start)\b.*\btimer|timer for/.test(t)) return callTool("set_timer", num(t) ? { minutes: num(t) } : {});
+  if (!/^(add|bought|i got|put)\b/.test(t) && /\b(expir|go(ing)? bad|use (up )?soon|about to)/.test(t)) return callTool("whats_expiring", {});
+  if (/\b(what can i (make|cook)|ideas|suggest|dinner|lunch|breakfast|recipe for tonight|what should i (make|cook))/.test(t)) return callTool("suggest_recipes", {});
+  let m = t.match(/\b(?:let'?s (?:make|cook)|start(?: cooking)?|cook|make)\s+(?:the |a |some )?(.+)/);
+  if (m) return callTool("start_cooking", { recipe: m[1] });
+  m = t.match(/\b(?:add|bought|i got|put)\s+(?:some |a |an )?(.+?)(?:\s+(?:to|in(?:to)?) (?:my |the )?(?:pantry|fridge|list))?(?:,?\s*(?:it )?(?:expires|expiring|good for|lasts) in (\w+) days?)?$/);
+  if (m) { const qty = num(m[1].split(" ")[0]); const name = m[1].replace(/^(\d+|\w+)\s+(?=\w)/, w => (num(w) ? "" : w)).trim();
+    return callTool("add_pantry_item", { name, quantity: qty ?? 1, ...(m[2] ? { expiresInDays: num(m[2]) } : {}) }); }
+  m = t.match(/\b(?:remove|used up|finished|threw out|out of|ran out of)\s+(?:the |my )?(.+)/);
+  if (m) return callTool("remove_pantry_item", { name: m[1] });
+  if (/\b(pantry|what do i have|fridge|inventory)\b/.test(t)) return callTool("list_pantry");
+  return { speech: "I can tell you what's expiring, suggest recipes, walk you through cooking step by step, and set timers. What would you like?" };
+}
+
+// ---- UI ----
+function bubble(text, who) { const d = document.createElement("div"); d.className = "msg " + who; d.textContent = text; $("#chat").append(d); $("#chat").scrollTop = 1e9; }
+function speak(text) { if (!$("#speak").checked || !("speechSynthesis" in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.03; speechSynthesis.speak(u); }
+
+function updateNow(r) {
+  const d = r?.data; const now = $("#now");
+  if (d && d.step) {
+    now.innerHTML = `<div class="eyebrow">${escapeHtml(d.recipe)} · Step ${d.step} of ${d.of}</div><h2>${escapeHtml(d.text)}</h2><div class="progress">${Array.from({ length: d.of }, (_, i) => `<span class="${i < d.step ? "on" : ""}"></span>`).join("")}</div>`;
+  } else if (d && d.done) {
+    now.innerHTML = `<div class="eyebrow">Finished</div><h2>${escapeHtml(d.recipe)} is ready. Enjoy!</h2>`;
+  } else if (Array.isArray(d) && d[0]?.usesExpiring) {
+    now.innerHTML = `<div class="eyebrow">Tonight's pick</div><h2>${escapeHtml(d[0].title)} · ${d[0].minutes} min</h2><div class="status">${d.slice(1).map(x => escapeHtml(x.title)).join(" · ")}</div>`;
+  }
+}
+
+async function refreshSide() {
+  const p = await callToolQuiet("list_pantry");
+  $("#pantry").innerHTML = (p.data ?? []).map(i => {
+    const cls = i.daysLeft === undefined ? "p-ok" : i.daysLeft <= 1 ? "p-bad" : i.daysLeft <= 3 ? "p-warn" : "p-ok";
+    const label = i.daysLeft === undefined ? "pantry" : i.daysLeft <= 0 ? "today" : `${i.daysLeft}d`;
+    return `<li><span>${escapeHtml(i.name)} <span class="status">${i.quantity} ${escapeHtml(i.unit)}</span></span><span class="pill ${cls}">${label}</span></li>`;
+  }).join("") || `<li class="status">Empty</li>`;
+  await refreshTimers();
+}
+async function refreshTimers() {
+  const t = await callToolQuiet("check_timers");
+  const ts = t.data ?? [];
+  $("#timers").innerHTML = ts.length ? ts.map(x => `<li><span>${escapeHtml(x.label)}</span><span>${x.done ? "DONE" : `${Math.floor(x.secondsLeft / 60)}:${String(x.secondsLeft % 60).padStart(2, "0")}`}</span></li>`).join("") : `<li class="status">None running</li>`;
+  for (const x of ts) if (x.done && !announced.has(x.id)) { announced.add(x.id); bubble(`⏰ ${x.label} is done!`, "alexa"); speak(`Your ${x.label} timer is done.`); }
+}
+const announced = new Set();
+async function callToolQuiet(name, args = {}) { const r = await rpc("tools/call", { name, arguments: args }); return r.structuredContent ?? {}; }
+
+async function handle(text) {
+  if (!text.trim()) return;
+  bubble(text, "me");
+  try {
+    const r = await route(text);
+    bubble(r.speech, "alexa"); speak(r.speech); updateNow(r);
+    lastOfferedTimer = /timer\?$/.test(r.speech);
+    lastSuggestion = Array.isArray(r.data) && r.data[0]?.usesExpiring ? r.data[0].id : null;
+    await refreshSide();
+  } catch (e) { bubble("Sorry, something went wrong: " + e.message, "alexa"); }
+}
+
+$("#form").addEventListener("submit", e => { e.preventDefault(); const v = $("#input").value; $("#input").value = ""; handle(v); });
+for (const c of ["What's expiring soon?", "What can I make for dinner?", "Yes", "Next", "Set a timer", "How long is left?", "Repeat that", "Add 2 avocados, expires in 2 days"]) {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.onclick = () => handle(c); $("#chips").append(b);
+}
+$("#reset").onclick = async () => { await fetch("/api/reset", { method: "POST", headers: { "x-household": household } }); $("#chat").innerHTML = ""; $("#log").innerHTML = ""; await refreshSide(); bubble("Demo pantry restored.", "alexa"); };
+
+// Voice input (Web Speech API, Chrome/Edge)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  const rec = new SR(); rec.lang = "en-US"; rec.interimResults = false;
+  rec.onresult = e => handle(e.results[0][0].transcript);
+  rec.onend = () => $("#mic").classList.remove("listening");
+  $("#mic").onclick = () => { speechSynthesis?.cancel(); $("#mic").classList.add("listening"); rec.start(); };
+} else { $("#mic").title = "Voice input needs Chrome or Edge; type instead."; $("#mic").onclick = () => $("#input").focus(); }
+
+(async () => {
+  const init = await rpc("initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "alexa-plus-simulator", version: "1.0.0" } });
+  const tools = await rpc("tools/list");
+  $("#status").textContent = `${init.serverInfo.name} · ${tools.tools.length} tools`; $("#status").classList.add("ok");
+  await refreshSide();
+  setInterval(refreshTimers, 1000);
+})().catch(e => { $("#status").textContent = "server offline"; });
+</script>
+</body>
+</html>
